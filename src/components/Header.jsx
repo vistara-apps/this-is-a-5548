@@ -1,7 +1,9 @@
 import React from 'react';
-import { Music, Home, Search, FileText, DollarSign, Settings } from 'lucide-react';
+import { Music, Home, Search, FileText, DollarSign, Settings, LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
-export function Header({ currentView, onNavigate, user, onShowSubscription }) {
+export function Header({ currentView, onNavigate, user, isAuthenticated, onShowSubscription, onShowLogin }) {
+  const { logout } = useAuth();
   const navigation = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'discovery', label: 'Sample Search', icon: Search },
@@ -55,18 +57,44 @@ export function Header({ currentView, onNavigate, user, onShowSubscription }) {
 
           {/* User Section */}
           <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <div className="text-sm font-medium text-textPrimary">{user.email}</div>
-              <div className={`text-xs font-medium ${getTierColor(user.subscriptionTier)}`}>
-                {user.subscriptionTier.charAt(0).toUpperCase() + user.subscriptionTier.slice(1)} Plan
+            {isAuthenticated ? (
+              <>
+                <div className="text-right">
+                  <div className="text-sm font-medium text-textPrimary">{user?.email}</div>
+                  <div className={`text-xs font-medium ${getTierColor(user?.subscriptionTier || 'free')}`}>
+                    {(user?.subscriptionTier || 'free').charAt(0).toUpperCase() + (user?.subscriptionTier || 'free').slice(1)} Plan
+                  </div>
+                </div>
+                <button 
+                  onClick={onShowSubscription}
+                  className="btn-primary text-sm py-2 px-4"
+                >
+                  Upgrade
+                </button>
+                <button
+                  onClick={logout}
+                  className="p-2 text-textSecondary hover:text-textPrimary transition-colors"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center space-x-3">
+                <button 
+                  onClick={onShowLogin}
+                  className="btn-outline text-sm py-2 px-4"
+                >
+                  Sign In
+                </button>
+                <button 
+                  onClick={onShowLogin}
+                  className="btn-primary text-sm py-2 px-4"
+                >
+                  Get Started
+                </button>
               </div>
-            </div>
-            <button 
-              onClick={onShowSubscription}
-              className="btn-primary text-sm py-2 px-4"
-            >
-              Upgrade
-            </button>
+            )}
           </div>
         </div>
       </div>

@@ -25,11 +25,12 @@ export function Hero() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-7xl font-bold text-textPrimary mb-6">
-            Sample Clearance
+            Clear music samples
+            <span className="text-primary"> legally, effortlessly</span>
           </h1>
           <p className="text-xl text-textSecondary max-w-3xl mx-auto leading-relaxed">
-            Sample Clearance clearance for simple tracks your tracks without your 
-            your stuff too.
+            Simplify music sample clearance for remix artists. Identify owners, manage legal agreements, 
+            and track usage with our comprehensive platform designed for the modern music industry.
           </p>
         </div>
 

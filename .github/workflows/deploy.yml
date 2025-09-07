@@ -28,7 +28,7 @@ jobs:
         NODE_OPTIONS: --max-old-space-size=4096
         
     - name: Deploy to Vercel (Production)
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && secrets.VERCEL_TOKEN != ''
       uses: amondnet/vercel-action@v25
       with:
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -37,7 +37,7 @@ jobs:
         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
         
     - name: Deploy to Vercel (Preview)
-      if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+      if: (github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master') && secrets.VERCEL_TOKEN != ''
       uses: amondnet/vercel-action@v25
       with:
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -45,24 +45,47 @@ jobs:
         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
         
-    - name: Comment PR with deployment URL
+    - name: Deployment Status
       if: github.event_name == 'pull_request'
       uses: actions/github-script@v7
       with:
         script: |
-          const { data: deployments } = await github.rest.repos.listDeployments({
-            owner: context.repo.owner,
-            repo: context.repo.repo
-          });
-          const latestDeployment = deployments[0];
-          if (latestDeployment) {
-            const deploymentUrl = `https://${latestDeployment.environment}.vercel.app`;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `🚀 **Preview Deployment Ready!**
-              \n\n📱 **URL:** ${deploymentUrl}
-              \n\nThis preview will be automatically updated when you push new commits to this PR.`
-            });
+          const hasVercelSecrets = '${{ secrets.VERCEL_TOKEN }}' !== '';
+          let body = '';
+          
+          if (hasVercelSecrets) {
+            // Try to get deployment info if Vercel is configured
+            try {
+              const { data: deployments } = await github.rest.repos.listDeployments({
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              });
+              const latestDeployment = deployments[0];
+              if (latestDeployment) {
+                const deploymentUrl = `https://${latestDeployment.environment}.vercel.app`;
+                body = `🚀 **Preview Deployment Ready!**
+                \n\n📱 **URL:** ${deploymentUrl}
+                \n\nThis preview will be automatically updated when you push new commits to this PR.`;
+              } else {
+                body = `✅ **Build Successful!**
+                \n\n🔧 Vercel deployment is configured but no deployment URL available yet.`;
+              }
+            } catch (error) {
+              body = `✅ **Build Successful!**
+              \n\n🔧 Vercel deployment initiated. Check the Actions tab for deployment status.`;
+            }
+          } else {
+            body = `✅ **Build Successful!**
+            \n\n💡 **Ready for Deployment:** The application built successfully and is ready to be deployed.
+            \n\n🔧 **To enable automatic deployments:** Configure Vercel secrets in repository settings:
+            \n- \`VERCEL_TOKEN\`
+            \n- \`VERCEL_ORG_ID\` 
+            \n- \`VERCEL_PROJECT_ID\``;
           }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });
